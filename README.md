@@ -2,7 +2,11 @@
 Susceptibilities of Atlantic salmon to Piscirickettsia salmonis
 
 ## Autor
-Gabriela Salas
+Gabriela Salas Serqueira
+
+## Descripción del problema
+Se busca determinar si es posible detectar diferencias en la expresión génica global en diferentes grupos genéticos de salmón del Atlántico como resultado de la infección por Piscirickettsia salmonis. Además, busca caracterizar la respuesta transcripcional de los peces para revelar los mecanismos que podrían conferir resistencia en el salmón del Atlántico a una infección con Piscirickettsia salmonis.
+
 
 ## Descripción de las Variables de estudios
 Como variable de estudio se define la mortalidad de peces por SRS en las familias que se seleccionaron para el estudio.
