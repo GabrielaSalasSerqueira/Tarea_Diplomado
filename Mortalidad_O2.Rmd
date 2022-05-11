@@ -1,0 +1,51 @@
+---
+title: "Mortalidad por bajas de oxígeno por Barrio"
+author: "Gabriela Salas"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(dplyr)
+library(readxl)
+library(tidyverse)
+library(kableExtra)
+library(pander)
+library(DT)
+```
+
+**Descripción del problema: **
+La mortalidad en salmones de cultivo es uno de los problemas que enfrenta la industria salmonera desde sus inicios, en la actualidad, los cambios en el clima ha afectado particularmente a aesta industria, en cuanto a variaciones en la temperatura del agua, horas luz, salinidad y variaciones de oxígeno disuelto entre otros, en este estudio intentaremos dilucidar si existen una tendencia según la unbicación de las unidades de cultivo dentro de la X Región y la mortalidad por bajas de oxígeno 
+**Descripción de las Variables de estudios: **
+Las variables que se usarán son los barrios donde estan ubicados los centros dentro de la X Región (Agrupacion de Centros), Mortalidad total (Total_Mortalidad) y Mortalidad por bajas de Oxigeno (Mortalidad_O2)
+
+**Numero de observaciones: ** 44
+
+```{r Cargar datos}
+Mortalidad_Salmones <- read_excel("R_2.xlsx", sheet=1,na="NA")
+head(Mortalidad_Salmones)
+```
+
+
+```{r Ordenar Tabla, echo=TRUE}
+##Ordenar R_2 creando un objeto tidy_Mortalidad con las variables de interés:
+tidy_Mortalidad <- select(Mortalidad_Salmones,Centro,Barrio,Oxigeno,Siembra,Mortalidad_Total,Mort_O2)
+head(tidy_Mortalidad)
+
+str(tidy_Mortalidad)
+
+#Transformar a Factor
+tidy_Mortalidad$Centro <- as.factor(tidy_Mortalidad$Centro)
+tidy_Mortalidad$Barrio <- as.factor(tidy_Mortalidad$Barrio)
+summary(tidy_Mortalidad)
+table(tidy_Mortalidad$Centro, tidy_Mortalidad$Barrio)
+```
+
+
+```{r Tabla Resumen, echo=TRUE}
+DT::datatable(tidy_Mortalidad,caption="Tabla 1. Resumen Mortalidad por Oxigeno por centro y Barrio")
+```
+
+
