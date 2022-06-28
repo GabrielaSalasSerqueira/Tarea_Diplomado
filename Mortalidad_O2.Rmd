@@ -15,6 +15,7 @@ library(kableExtra)
 library(pander)
 library(DT)
 library(gridExtra)
+library(car)
 ```
 
 **Descripción del problema: **
@@ -101,7 +102,7 @@ grid.arrange(hist_Siembra, hist_O2, hist_Mortalidad_Total, hist_MortO2, ncol=2, 
 En los gráficos de boxplot se observan datos atípicos que representan números máximos o mínimos en siembra para el barrio 16, y en el caso del barrio 17A también se observa un centro que fue sembrado com más peces que el promedio o rango del barrio. Para el caso de la concentración en el grafico de boxplot se observa que en el barrio 17B y 16 esxisten valores que escapan del promedio del barrio y del promedio de todos los barrios, para las muestras del barrio 9b y 8 se observa que no hay mayor variación de los datos.
 Para la mortalidad total por barrio no se observan datos outlier, sin embargo si se observa variación de datos por barrio y entre barrios, finalmente al observar la mortalidad por O2 se puede observar outlier en los barrios 16, 7, 17B, donde el 17B presenta el peak de mortalidad por esta causa, y para los barrios 16 y 7 si bien presentan outlier para sus respectivos barrios, estan por debajo de los promedios de los demas barrios.
 
-En Histogramas podemos ver las distribuciones de los datos y que se condicen con los boxplot, donde las observaciones no muestran una distribucion normal
+En Histogramas podemos ver las distribuciones de los datos y que se condicen con los boxplot, donde las observaciones no muestran una distribucion normal.
 
 
 
@@ -109,25 +110,66 @@ En Histogramas podemos ver las distribuciones de los datos y que se condicen con
 ```{r}
 plot.design(tidy_Mortalidad$Mort_O2~tidy_Mortalidad$Barrio*tidy_Mortalidad$Centro,main="Figura 9. Gráfico de interacción de factores",xlab="Factores", ylab="Mortalidad Oxigeno")
 
-interaction.plot(tidy_Mortalidad$Oxigeno ,tidy_Mortalidad$Barrio, tidy_Mortalidad$Mort_O2,
+interaction.plot(tidy_Mortalidad$Oxigeno, tidy_Mortalidad$Barrio,tidy_Mortalidad$Mort_O2,
                  main="Figura 10. Gráfico de interacción de factores",
                  xlab="Oxígeno disuelto", ylab="Mortalidad por bajas O2", trace.label = "Barrio")
+
 ```
 
 ```{r Correlación O2 & MortO2, echo=TRUE}
-plot(tidy_Mortalidad$Oxigeno, tidy_Mortalidad$Mort_O2, col="blue",
+plot(tidy_Mortalidad$Oxigeno, tidy_Mortalidad$Mort_O2, col="#00688B",
      main="Figura 11. Gráfico de Correlación Oxigeno y Mortalidad por bajas de Oxigeno",
      xlab="Concentración O2", ylab="MortalidadO2")
-abline(lm(tidy_Mortalidad$Mort_O2 ~ tidy_Mortalidad$Oxigeno), col = "red",lwd = 2,
-        )
 ```
 
 
 
 ```{r}
-tidy_Mortalidad %>% group_by(Barrio)%>% summarize (n=n(),sum(Mort_O2), mean(Mort_O2), median(Mort_O2), max(Mort_O2) )
+Datos_mortaldiad<-tidy_Mortalidad %>% group_by(Barrio)%>% summarize (n=n(),sum(Mort_O2), mean(Mort_O2), median(Mort_O2), max(Mort_O2), Variance= var(Mort_O2) )
+
+
+knitr::kable(Datos_mortaldiad,caption ="Estimadores puntuales de media y varianza")
+
+
 ```
 
 En la Tabla anterior se observa que los N por barrio no están balanceados, ya que hay barrios como el 17B que tiene 14 muestras (Centros), y otros como el 10A, 8 y 9B que sólo presentan 2 muestras (Centros)
 
+
+
+##**Hipotesis prueba de correlación**
+
+H0: p=0
+H1: p!=0
+
+```{r Prueba de Correlación de Pearson}
+cor.test(tidy_Mortalidad$Mort_O2, tidy_Mortalidad$Oxigeno, alternative = c("two.sided") )
+
+```
+
+```{r Modelo lineal}
+Mort.O2<-lm(Mort_O2~Oxigeno + Barrio + Siembra, data=tidy_Mortalidad)
+plot(Mort.O2)
+summary(Mort.O2)
+anova(Mort.O2)
+```
+
+
+
+
+
+```{r Anova}
+Mortalidad_O2<-lm(Mort_O2~Barrio, data =tidy_Mortalidad)
+anova(Mortalidad_O2)
+
+pander::pander(Mortalidad_O2, caption = "ANOVA a una vía de clasificación.")
+```
+
+```{r}
+plot(Mortalidad_O2$residuals, pch=15, col = "#00688B")
+```
+
+```{r}
+
+```
 
