@@ -14,18 +14,23 @@ library(tidyverse)
 library(kableExtra)
 library(pander)
 library(DT)
+library(gridExtra)
 ```
 
 **Descripción del problema: **
 La mortalidad en salmones de cultivo es uno de los problemas que enfrenta la industria salmonera desde sus inicios, en la actualidad, los cambios en el clima ha afectado particularmente a aesta industria, en cuanto a variaciones en la temperatura del agua, horas luz, salinidad y variaciones de oxígeno disuelto entre otros, en este estudio intentaremos dilucidar si existen una tendencia según la unbicación de las unidades de cultivo dentro de la X Región y la mortalidad por bajas de oxígeno 
+
+
 **Descripción de las Variables de estudios: **
 Las variables que se usarán son los barrios donde estan ubicados los centros dentro de la X Región (Agrupacion de Centros), Mortalidad total (Total_Mortalidad) y Mortalidad por bajas de Oxigeno (Mortalidad_O2)
+
 
 **Numero de observaciones: ** 44
 
 ```{r Cargar datos}
 Mortalidad_Salmones <- read_excel("R_2.xlsx", sheet=1,na="NA")
 head(Mortalidad_Salmones)
+
 ```
 
 
@@ -40,12 +45,89 @@ str(tidy_Mortalidad)
 tidy_Mortalidad$Centro <- as.factor(tidy_Mortalidad$Centro)
 tidy_Mortalidad$Barrio <- as.factor(tidy_Mortalidad$Barrio)
 summary(tidy_Mortalidad)
-table(tidy_Mortalidad$Centro, tidy_Mortalidad$Barrio)
+
 ```
 
 
 ```{r Tabla Resumen, echo=TRUE}
 DT::datatable(tidy_Mortalidad,caption="Tabla 1. Resumen Mortalidad por Oxigeno por centro y Barrio")
+pander(summary(tidy_Mortalidad,caption="Tabla 2. Resumen"))
 ```
+```{r Histograma & Boxplot, echo=TRUE}
+hist_Siembra <- ggplot(tidy_Mortalidad,aes(Siembra))+
+  geom_histogram(color="White",fill="#2F4F4F",bins=8)+
+  labs(title = "Figura 1. Histograma Siembra")
+hist_Siembra
+
+blot_Siembra <- ggplot(tidy_Mortalidad,aes(y=Siembra,x=reorder(Barrio, Siembra)))+
+  geom_boxplot(fill="#2F4F4F",outlier.colour = "#8B2323")+
+  labs(title="Figura 2. Boxplot Siembra por Barrio",y="Número Peces",x="Barrio")
+blot_Siembra
+
+hist_O2 <- ggplot(tidy_Mortalidad,aes(Oxigeno))+
+  geom_histogram(color="White",fill="#00688B",bins=8)+
+  labs(title = "Figura 3. Histograma Oxígeno disuelto")
+hist_O2
+
+blot_O2 <- ggplot(tidy_Mortalidad,aes(y=Oxigeno,x=reorder(Barrio, Oxigeno)))+
+  geom_boxplot(fill="#00688B",outlier.colour = "#8B2323")+
+  labs(title="Figura 4. Boxplot Oxigeno según barrio",y="O2 (mg/l)",x="Barrio")
+blot_O2
+
+hist_Mortalidad_Total <- ggplot(tidy_Mortalidad,aes(Mortalidad_Total))+
+  geom_histogram(color="White", fill="#53868B",bins=8)+
+  labs(title = "Figura 5 Histograma Mortalidad Total")
+hist_Mortalidad_Total
+
+blot_Mortalidad_Total <- ggplot(tidy_Mortalidad,aes(y=Mortalidad_Total,x=reorder(Barrio, Mortalidad_Total)))+
+  geom_boxplot(fill="#53868B",outlier.colour = "#8B2323")+
+  labs(title="Figura 6. Boxplot Mortalidad Total barrio",y="Mort #",x="Barrio")
+blot_Mortalidad_Total
+
+hist_MortO2 <- ggplot(tidy_Mortalidad,aes(Mort_O2))+
+  geom_histogram(color="White",fill="#838B83",bins=8)+
+  labs(title = "Figura 7. Histograma por bajas de Oxígeno")
+hist_MortO2
+
+blot_MortO2 <- ggplot(tidy_Mortalidad,aes(y=Mort_O2,x=reorder(Barrio, Mort_O2 )))+
+  geom_boxplot(fill="#838B83",outlier.colour = "#8B2323")+
+  labs(title="Figura 8. Boxplot Mortalidad por Bajas de Oxígeno barrio",y="Mort por Bajas de O2",x="Barrio")
+blot_MortO2
+
+grid.arrange(hist_Siembra, hist_O2, hist_Mortalidad_Total, hist_MortO2, ncol=2, nrow =2)
+```
+
+
+En los gráficos de boxplot se observan datos atípicos que representan números máximos o mínimos en siembra para el barrio 16, y en el caso del barrio 17A también se observa un centro que fue sembrado com más peces que el promedio o rango del barrio. Para el caso de la concentración en el grafico de boxplot se observa que en el barrio 17B y 16 esxisten valores que escapan del promedio del barrio y del promedio de todos los barrios, para las muestras del barrio 9b y 8 se observa que no hay mayor variación de los datos.
+Para la mortalidad total por barrio no se observan datos outlier, sin embargo si se observa variación de datos por barrio y entre barrios, finalmente al observar la mortalidad por O2 se puede observar outlier en los barrios 16, 7, 17B, donde el 17B presenta el peak de mortalidad por esta causa, y para los barrios 16 y 7 si bien presentan outlier para sus respectivos barrios, estan por debajo de los promedios de los demas barrios.
+
+En Histogramas podemos ver las distribuciones de los datos y que se condicen con los boxplot, donde las observaciones no muestran una distribucion normal
+
+
+
+
+```{r}
+plot.design(tidy_Mortalidad$Mort_O2~tidy_Mortalidad$Barrio*tidy_Mortalidad$Centro,main="Figura 9. Gráfico de interacción de factores",xlab="Factores", ylab="Mortalidad Oxigeno")
+
+interaction.plot(tidy_Mortalidad$Oxigeno ,tidy_Mortalidad$Barrio, tidy_Mortalidad$Mort_O2,
+                 main="Figura 10. Gráfico de interacción de factores",
+                 xlab="Oxígeno disuelto", ylab="Mortalidad por bajas O2", trace.label = "Barrio")
+```
+
+```{r Correlación O2 & MortO2, echo=TRUE}
+plot(tidy_Mortalidad$Oxigeno, tidy_Mortalidad$Mort_O2, col="blue",
+     main="Figura 11. Gráfico de Correlación Oxigeno y Mortalidad por bajas de Oxigeno",
+     xlab="Concentración O2", ylab="MortalidadO2")
+abline(lm(tidy_Mortalidad$Mort_O2 ~ tidy_Mortalidad$Oxigeno), col = "red",lwd = 2,
+        )
+```
+
+
+
+```{r}
+tidy_Mortalidad %>% group_by(Barrio)%>% summarize (n=n(),sum(Mort_O2), mean(Mort_O2), median(Mort_O2), max(Mort_O2) )
+```
+
+En la Tabla anterior se observa que los N por barrio no están balanceados, ya que hay barrios como el 17B que tiene 14 muestras (Centros), y otros como el 10A, 8 y 9B que sólo presentan 2 muestras (Centros)
 
 

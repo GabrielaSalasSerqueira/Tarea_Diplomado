@@ -1,0 +1,23 @@
+---
+  title: "Susceptibilities of Atlantic salmon to Piscirickettsia salmonis"
+  author: "Gabriela Salas"
+  date: "`r Sys.Date()`"
+  output:
+    html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(datasets)
+library(ggplot2) 
+library(readxl)
+library(stats)
+library(lme4)
+
+```
+
+## Descripción del Problema
+determinar si se pueden detectar diferencias en la expresión génica global en diferentes grupos genéticos de salmón del Atlántico como resultado de la infección por Piscirickettsia salmonis
+```{r resumen GSE43255,echo=FALSE}
+summary(GSE43255)
+
+```
