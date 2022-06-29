@@ -2,7 +2,9 @@
 title: "Mortalidad por bajas de oxígeno por Barrio"
 author: "Gabriela Salas"
 date: "`r Sys.Date()`"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -28,6 +30,10 @@ Las variables que se usarán son los barrios donde estan ubicados los centros de
 
 **Numero de observaciones: ** 44
 
+
+
+** Análisis Exploratorio de Datos**
+
 ```{r Cargar datos}
 Mortalidad_Salmones <- read_excel("R_2.xlsx", sheet=1,na="NA")
 head(Mortalidad_Salmones)
@@ -40,20 +46,40 @@ head(Mortalidad_Salmones)
 tidy_Mortalidad <- select(Mortalidad_Salmones,Centro,Barrio,Oxigeno,Siembra,Mortalidad_Total,Mort_O2)
 head(tidy_Mortalidad)
 
-str(tidy_Mortalidad)
-
 #Transformar a Factor
 tidy_Mortalidad$Centro <- as.factor(tidy_Mortalidad$Centro)
 tidy_Mortalidad$Barrio <- as.factor(tidy_Mortalidad$Barrio)
+
 summary(tidy_Mortalidad)
 
+
+```
+
+
+Se puede observar que los datos no se encuentran balanceados ya que en los barrios 10A, 8 y 9B sólo hay 2 muestras, mientras que en barrios como el 17B y 17A hay 14 y 9 respectivamente.
+
+
+
+```{r}
+
+str(tidy_Mortalidad)
 ```
 
 
 ```{r Tabla Resumen, echo=TRUE}
 DT::datatable(tidy_Mortalidad,caption="Tabla 1. Resumen Mortalidad por Oxigeno por centro y Barrio")
 pander(summary(tidy_Mortalidad,caption="Tabla 2. Resumen"))
+
+Datos_mortaldiad<-tidy_Mortalidad %>% group_by(Barrio)%>% summarize (n=n(),sum(Mort_O2), mean(Mort_O2), median(Mort_O2), max(Mort_O2), Variance= var(Mort_O2) )
+
+
+knitr::kable(Datos_mortaldiad,caption ="Estimadores puntuales de media y varianza")
 ```
+
+
+** GRaficos Histogramas & Boxplot**
+
+
 ```{r Histograma & Boxplot, echo=TRUE}
 hist_Siembra <- ggplot(tidy_Mortalidad,aes(Siembra))+
   geom_histogram(color="White",fill="#2F4F4F",bins=8)+
@@ -106,15 +132,17 @@ En Histogramas podemos ver las distribuciones de los datos y que se condicen con
 
 
 
+**Graficos de Interacción**
 
-```{r}
+```{r Graficos de Interacción, echo=TRUE}
 plot.design(tidy_Mortalidad$Mort_O2~tidy_Mortalidad$Barrio*tidy_Mortalidad$Centro,main="Figura 9. Gráfico de interacción de factores",xlab="Factores", ylab="Mortalidad Oxigeno")
 
-interaction.plot(tidy_Mortalidad$Oxigeno, tidy_Mortalidad$Barrio,tidy_Mortalidad$Mort_O2,
+interaction.plot(tidy_Mortalidad$Mort_O2, tidy_Mortalidad$Barrio,tidy_Mortalidad$Oxigeno,
                  main="Figura 10. Gráfico de interacción de factores",
                  xlab="Oxígeno disuelto", ylab="Mortalidad por bajas O2", trace.label = "Barrio")
 
 ```
+**Correlación de Datos O2 vs Mortalidad por O2**
 
 ```{r Correlación O2 & MortO2, echo=TRUE}
 plot(tidy_Mortalidad$Oxigeno, tidy_Mortalidad$Mort_O2, col="#00688B",
@@ -123,53 +151,54 @@ plot(tidy_Mortalidad$Oxigeno, tidy_Mortalidad$Mort_O2, col="#00688B",
 ```
 
 
+**Evaluación de supuestos**
+Se evaluan los siguientes suspuestos:
 
-```{r}
-Datos_mortaldiad<-tidy_Mortalidad %>% group_by(Barrio)%>% summarize (n=n(),sum(Mort_O2), mean(Mort_O2), median(Mort_O2), max(Mort_O2), Variance= var(Mort_O2) )
-
-
-knitr::kable(Datos_mortaldiad,caption ="Estimadores puntuales de media y varianza")
-
-
-```
-
-En la Tabla anterior se observa que los N por barrio no están balanceados, ya que hay barrios como el 17B que tiene 14 muestras (Centros), y otros como el 10A, 8 y 9B que sólo presentan 2 muestras (Centros)
-
-
-
-##**Hipotesis prueba de correlación**
-
-H0: p=0
-H1: p!=0
-
-```{r Prueba de Correlación de Pearson}
-cor.test(tidy_Mortalidad$Mort_O2, tidy_Mortalidad$Oxigeno, alternative = c("two.sided") )
-
-```
+**Independencia** 
+Independencia de los datos: Los datos son obtenidos desde disntintos Barrios y Centros, por lo que existe independencia.
 
 ```{r Modelo lineal}
 Mort.O2<-lm(Mort_O2~Oxigeno + Barrio + Siembra, data=tidy_Mortalidad)
 plot(Mort.O2)
 summary(Mort.O2)
 anova(Mort.O2)
+
+```
+
+```
+**Homocedasticidad**
+Se observa que el patrón indica que las varianzas de los residuos son desiguales. por lo que no se cumple la Homocedasticidad.
+
+**Normalidad**
+Los residuales no siguen la distribución normal teorica, a pesar de que existe una porción de los residuos que si se ajusta a la línea recta diagonal teórica, por lo que podemos concluir que el suspuesto de normalidad no se cumple.
+
+
+**Hipotesis prueba de correlación**
+
+H0: p=0
+H1: p!=0
+
+
+```{r Prueba de Correlación de Pearson}
+cor.test(tidy_Mortalidad$Mort_O2, tidy_Mortalidad$Oxigeno, alternative = c("two.sided") )
 ```
 
 
-
+Se observa que existe una correlación muy pequeña entre los datos de Oxigeno y mortalidad por bajas de oxígeno, esta correlación tan baja se debe a que el valor de oxígeno considera sólo los promedios del ciclo productivo y no todas las mediciones durante éste, por lo que es muy dificil concluir al respecto.
 
 
 ```{r Anova}
 Mortalidad_O2<-lm(Mort_O2~Barrio, data =tidy_Mortalidad)
 anova(Mortalidad_O2)
 
+shapiro.test(residuals(Mortalidad_O2))
 pander::pander(Mortalidad_O2, caption = "ANOVA a una vía de clasificación.")
 ```
 
-```{r}
+```{r Grafico}
 plot(Mortalidad_O2$residuals, pch=15, col = "#00688B")
 ```
 
-```{r}
 
-```
+
 
