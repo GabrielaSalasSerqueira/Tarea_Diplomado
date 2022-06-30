@@ -1,0 +1,169 @@
+---
+title: "Mortalidad por Bajas de O2 en función a la concentración de O2"
+author: "Gabriela Salas Serqueira"
+date: "`r Sys.Date()`"
+fontsize: 12pt
+output:
+  beamer_presentation:
+    theme: Malmoe
+    colortheme: seahorse
+    fonttheme: professionalfonts
+    includes:
+      in_header: mystyle.tex
+  ioslides_presentation: default
+  slidy_presentation: default
+subtitle: Diplomado en Análisis de datos con R para la Acuicultura.
+institute: Pontificia Universidad Católica de Valparaíso
+---
+
+```{r setup, include=FALSE, comment=TRUE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(ggplot2)
+library(dplyr)
+library(readxl)
+library(tidyverse)
+library(kableExtra)
+library(pander)
+library(DT)
+library(gridExtra)
+library(car)
+```
+
+## Introducción 
+
+\footnotesize
+
+**Descripción del problema:**
+La mortalidad en salmones de cultivo es uno de los problemas que enfrenta la industria salmonera desde sus inicios, en la actualidad, los cambios en el clima ha afectado particularmente a aesta industria, en cuanto a variaciones en la temperatura del agua, horas luz, salinidad y variaciones de oxígeno disuelto entre otros, en este estudio intentaremos dilucidar si existen una tendencia según la unbicación de las unidades de cultivo dentro de la X Región y la mortalidad por bajas de oxígeno 
+
+**Descripción de las Variables de estudios: **
+Las variables que se usarán son los barrios donde estan ubicados los centros dentro de la X Región (Agrupacion de Centros), Mortalidad total (Total_Mortalidad) y Mortalidad por bajas de Oxigeno (Mortalidad_O2)
+
+**Numero de observaciones: ** 44
+
+## Análisis Exploratorio
+
+\footnotesize
+
+Tabla resumen de los datos a analizar.
+
+```{r Datos,  echo=FALSE, out.width = '80%', fig.align='center'} 
+Mortalidad_Salmones <- read_excel("R_2.xlsx", sheet=1,na="NA")
+tidy_Mortalidad <- select(Mortalidad_Salmones,Centro,Barrio,Oxigeno,Siembra,Mortalidad_Total,Mort_O2)
+tidy_Mortalidad$Centro <- as.factor(tidy_Mortalidad$Centro)
+tidy_Mortalidad$Barrio <- as.factor(tidy_Mortalidad$Barrio)
+Datos_mortaldiad<-tidy_Mortalidad %>% group_by(Barrio)%>% summarize (n=n(),mean(Mort_O2), median(Mort_O2), Variance= var(Mort_O2) )
+```
+
+```{r Estimadores Puntuales, message=TRUE, out.width = '20%', fig.align='center'}
+kbl(head(Datos_mortaldiad[,1:5]),align='cccc',
+    linesep=c("","","","","",""), 
+    caption = "Estimadores puntuales")
+
+```
+Se observa que las observaciones no se encuentran balanceados, ya que los N muestreales en los distintos barrios son muy distintos entre ellos. Ejemplo: Barrio 17B 14 muestras mientras que el barrio 8 sólo presenta 2 muetras.
+
+
+
+## Exploratorio de datos
+
+\footnotesize
+Mediante gráficos de histogramas revisamos la distribución de las variables de estudio 
+
+```{r Graficos, echo=FALSE, out.width = '80%', fig.align='center'}
+hist_Siembra <- ggplot(tidy_Mortalidad,aes(Siembra))+
+  geom_histogram(color="White",fill="#2F4F4F",bins=8)+
+  labs(title = "Figura 1. Histograma Siembra")
+
+blot_Siembra <- ggplot(tidy_Mortalidad,aes(y=Siembra,x=reorder(Barrio, Siembra)))+
+  geom_boxplot(fill="#2F4F4F",outlier.colour = "#8B2323")+
+  labs(title="Figura 2. Boxplot Siembra por Barrio",y="Número Peces",x="Barrio")
+
+hist_O2 <- ggplot(tidy_Mortalidad,aes(Oxigeno))+
+  geom_histogram(color="White",fill="#00688B",bins=8)+
+  labs(title = "Figura 3. Histograma Oxígeno disuelto")
+
+blot_O2 <- ggplot(tidy_Mortalidad,aes(y=Oxigeno,x=reorder(Barrio, Oxigeno)))+
+  geom_boxplot(fill="#00688B",outlier.colour = "#8B2323")+
+  labs(title="Figura 4. Boxplot Oxigeno según barrio",y="O2 (mg/l)",x="Barrio")
+
+hist_Mortalidad_Total <- ggplot(tidy_Mortalidad,aes(Mortalidad_Total))+
+  geom_histogram(color="White", fill="#53868B",bins=8)+
+  labs(title = "Figura 5 Histograma Mortalidad Total")
+
+blot_Mortalidad_Total <- ggplot(tidy_Mortalidad,aes(y=Mortalidad_Total,x=reorder(Barrio, Mortalidad_Total)))+
+  geom_boxplot(fill="#53868B",outlier.colour = "#8B2323")+
+  labs(title="Figura 6. Boxplot Mortalidad Total barrio",y="Mort #",x="Barrio")
+
+hist_MortO2 <- ggplot(tidy_Mortalidad,aes(Mort_O2))+
+  geom_histogram(color="White",fill="#838B83",bins=8)+
+  labs(title = "Figura 7. Histograma por bajas de Oxígeno")
+
+blot_MortO2 <- ggplot(tidy_Mortalidad,aes(y=Mort_O2,x=reorder(Barrio, Mort_O2 )))+
+  geom_boxplot(fill="#838B83",outlier.colour = "#8B2323")+
+  labs(title="Figura 8. Boxplot Mortalidad por Bajas de Oxígeno barrio",y="Mort por Bajas de O2",x="Barrio")
+
+```
+
+
+```{r Gráficos, message=FALSE, out.width = '40%', fig.align='center', error=FALSE, warning=FALSE}
+grid.arrange(hist_O2, blot_O2, ncol=2, nrow =1)
+```
+
+
+En los gráficos podemos observar que los datos de Oxígeno disuleto peresenta una distribución normal, con algunos datos atípicos, la media de la concentración de oxigeno para el set de datos se encuentra al rededor de los 8 mg/l, existen mediciones fuera del rango normal, por sobre los 10mg/l.
+Es importante enteder que estos datos representa los promedio de las mediciones de distintos ciclos productivos en los distintos barrios que se realizó el muestreo.
+
+
+
+## Hipotesis prueba de correlación
+
+\footnotesize
+Se realiza la correlación de Pearson entre los datos de Mortaldiad por baja de Oxigeno y la concentración de oxígeno disuelto en la columna de agua 
+
+```{r Pearson, message=TRUE, out.width = '10%', fig.align='center'}
+cor.test(tidy_Mortalidad$Mort_O2, tidy_Mortalidad$Oxigeno, alternative = c("two.sided"))
+```
+
+## Hipotesis prueba de correlación
+
+\footnotesize
+
+El test de Pearson, nos indica que existe una correlación negativa entre ambas variables, vale decir que a menor concentración de oxígeno en el agua aumenta la mortalidad de los peces, sin embargo el valor obtenido es muy bajo con un p-valor de 0.12 no significativo. Esto se debe a la cáracteristica de los datos utilizados para el análisis, ya que solo se consideró el promedio del ciclo productivo y no todas las mediciones durante el ciclo.
+
+
+## Evaluación de supuestos
+
+Se evaluan los siguientes suspuestos:
+
+**Independencia** 
+
+Independencia de los datos: Las observaciones fueron obtenidos desde disntintos Barrios y Centros de cultivos, por lo que existe independencia.
+
+**Homocedasticidad**
+Se observa en el gráfico que las varianzas de los residuales son desiguales, por lo que no se cumple el suspuest de Homocedasticidad.
+
+**Normalidad**
+la distribución de los residuales no siguen la distribución normal teórica, a pesar de que existe una porción de éstos que si se ajusta a la línea recta diagonal teórica, por lo que podemos concluir que el suspuesto de normalidad no se cumple.
+
+
+## Modelo Lineal
+
+\footnotesize
+
+Para la evaluación de los suspuestos se utiliza el modelo lineal, donde se consideran las variables, oxígenos, barrio y N° de siembra como variables predictoras y la variable respuesta es la mortalidad por bajas de oxígeno 
+
+```{r Modelo lineal, message=FALSE, out.width = '40%', fig.align='center'}
+Mort.O2<-lm(Mort_O2~Oxigeno + Barrio + Siembra, data=tidy_Mortalidad)
+summary(Mort.O2)$coef %>% kable()
+```
+
+
+```{r Anova, message=TRUE, out.width = '40%', fig.align='center'}
+anova(Mort.O2)%>% kable()
+```
+
+## Conclusión
+
+Finalmente se concluye que el modelo permite predecir como afecta la concentración de oxigeno a la variable respuesta mortalidad por oxígeno, sin embargo al revisar el R2 ajustado notamos que la capacidad predictoria es muy baja.
